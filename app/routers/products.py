@@ -24,7 +24,7 @@ async def create_product(product: ProductCreate, db: Session = Depends(get_db)):
     """
     Создаёт новый товар.
     """
-    stmt = select(CategoryModel).where(CategoryModel.id == product.category_id)
+    stmt = select(CategoryModel).where(CategoryModel.id == product.category_id, CategoryModel.is_active == True)
     db_category = db.scalars(stmt).first()
 
     if db_category is None:
