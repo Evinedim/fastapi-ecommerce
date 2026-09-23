@@ -12,12 +12,16 @@ router = APIRouter(
     tags=["products"]
 )
 
-@router.get("/")
-async def get_all_products():
+@router.get("/", response_model=list[ProductSchema])
+async def get_all_products(db: Session = Depends(get_db)):
     """
     Возвращает список всех товаров.
     """
-    return {"message": "Список всех товаров (заглушка)"}
+    products = db.scalars(
+        select(ProductModel).where(ProductModel.is_active == True)
+    ).all()
+    
+    return products
 
 @router.post("/", response_model=ProductSchema, status_code=status.HTTP_201_CREATED)
 async def create_product(product: ProductCreate, db: Session = Depends(get_db)):
