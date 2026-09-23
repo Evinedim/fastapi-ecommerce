@@ -57,12 +57,17 @@ async def get_products_by_category(category_id: int, db: Session = Depends(get_d
     ).all()
     return db_products
 
-@router.get("/{product_id}")
-async def get_product(product_id: int):
+@router.get("/{product_id}", response_model=ProductSchema)
+async def get_product(product_id: int, db: Session = Depends(get_db)):
     """
     Возвращает детальную информацию о товаре по его ID.
     """
-    return {"message": f"Детали товара {product_id} (заглушка)"}
+    db_product = db.scalars(
+        select(ProductModel).where(ProductModel.id == product_id, ProductModel.is_active == True)
+    ).first()
+    if db_product is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
+    return db_product
 
 @router.put("/{product_id}")
 async def update_product(product_id: int):
