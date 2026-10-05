@@ -68,6 +68,12 @@ async def get_product(product_id: int, db: Session = Depends(get_db)):
     ).first()
     if db_product is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
+
+    db_category = db.scalars(
+        select(CategoryModel).where(CategoryModel.id == db_product.category_id, CategoryModel.is_active == True)
+    ).first()
+    if db_category is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found or inactive")
     
     return db_product
 
