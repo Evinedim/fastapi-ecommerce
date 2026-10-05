@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from collections.abc import Generator
-
 from app.database import SessionLocal
 
 
