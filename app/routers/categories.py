@@ -21,8 +21,8 @@ async def get_all_categories(db: AsyncSession = Depends(get_async_db)):
     result = await db.scalars(
         select(CategoryModel).where(CategoryModel.is_active == True)
     )
-    categories = result.all()
-    return categories
+    db_categories = result.all()
+    return db_categories
 
 @router.post("/", response_model=CategorySchema, status_code=status.HTTP_201_CREATED)
 async def create_category(category: CategoryCreate, db: AsyncSession = Depends(get_async_db)):
@@ -41,6 +41,7 @@ async def create_category(category: CategoryCreate, db: AsyncSession = Depends(g
     db.add(db_category)
     await db.commit()
     db.refresh(db_category)
+    
     return db_category
 
 @router.put("/{category_id}", response_model=CategorySchema)
@@ -70,19 +71,24 @@ async def update_category(category_id: int, category: CategoryCreate, db: AsyncS
         update(CategoryModel).where(CategoryModel.id == category_id).values(**updated_data)
     )
     await db.commit()
+
     return db_category
 
-@router.delete("/{category_id}")
-async def delete_category(category_id: int, db: Session = Depends(get_db)):
+@router.delete("/{category_id}", response_model=CategorySchema)
+async def delete_category(category_id: int, db: AsyncSession = Depends(get_async_db)):
     """
-    Логически удаляет категорию по её ID, устанавливая is_active = False.
+    Выполняет мягкое удаление категории по её ID, устанавливая is_active = False.
     """
-    stmt = select(CategoryModel).where(CategoryModel.id == category_id, CategoryModel.is_active == True)
-    category = db.scalars(stmt).first()
-    if category is None:
+    result = await db.scalars(
+        select(CategoryModel).where(CategoryModel.id == category_id, CategoryModel.is_active == True)
+    )
+    db_category = result.first()
+    if db_category is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
 
-    db.execute(update(CategoryModel).where(CategoryModel.id == category_id).values(is_active=False))
-    db.commit()
+    await db.execute(
+        update(CategoryModel).where(CategoryModel.id == category_id).values(is_active=False)
+    )
+    await db.commit()
 
-    return {"status": "success", "message": "Category marked as inactive"}
+    return db_category
