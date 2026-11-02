@@ -84,27 +84,29 @@ async def get_product(product_id: int, db: AsyncSession = Depends(get_async_db))
     return db_product
 
 @router.put("/{product_id}", response_model=ProductSchema)
-async def update_product(product_id: int, product: ProductCreate, db: Session = Depends(get_db)):
+async def update_product(product_id: int, product: ProductCreate, db: AsyncSession = Depends(get_async_db)):
     """
     Обновляет товар по его ID.
     """
-    db_product = db.scalars(
+    db_scalars = await db.scalars(
         select(ProductModel).where(ProductModel.id == product_id, ProductModel.is_active == True)
-    ).first()
+    )
+    db_product = db_scalars.first()
     if db_product is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
 
-    db_category = db.scalars(
+    db_scalars = await db.scalars(
         select(CategoryModel).where(CategoryModel.id == product.category_id, CategoryModel.is_active == True)
-    ).first()
+    )
+    db_category = db_scalars.first()
     if db_category is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Category not found or inactive")
 
-    db.execute(
+    await db.execute(
         update(ProductModel).where(ProductModel.id == product_id).values(**product.model_dump())
     )
-    db.commit()
-    db.refresh(db_product)
+    await db.commit()
+    await db.refresh(db_product)
         
     return db_product
 
