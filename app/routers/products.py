@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select, update
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.products import Product as ProductModel
 from app.models.categories import Category as CategoryModel
 from app.schemas import Product as ProductSchema, ProductCreate
-from app.db_depends import get_db, get_async_db
+from app.db_depends import get_async_db
 
 router = APIRouter(
     prefix="/products",
@@ -32,7 +31,6 @@ async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_
         select(CategoryModel).where(CategoryModel.id == product.category_id, CategoryModel.is_active == True)
     )
     db_category = db_scalars.first()
-
     if db_category is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Category not found or inactive")
 
@@ -102,15 +100,15 @@ async def update_product(product_id: int, product: ProductCreate, db: AsyncSessi
     if db_category is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Category not found or inactive")
 
-    await db.execute(
-        update(ProductModel).where(ProductModel.id == product_id).values(**product.model_dump())
-    )
+    for field, value in product.model_dump().items():
+        setattr(db_product, field, value)
+
     await db.commit()
     await db.refresh(db_product)
-        
+
     return db_product
 
-@router.delete("/{product_id}")
+@router.delete("/{product_id}", response_model=ProductSchema)
 async def delete_product(product_id: int, db: AsyncSession = Depends(get_async_db)):
     """
     Логически удаляет продукт по его ID, устанавливая is_active = False.
@@ -122,9 +120,8 @@ async def delete_product(product_id: int, db: AsyncSession = Depends(get_async_d
     if db_product is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
 
-    await db.execute(
-        update(ProductModel).where(ProductModel.id == product_id).values(is_active=False)
-    )
+    db_product.is_active = False
     await db.commit()
+    await db.refresh(db_product)
 
-    return {"status": "success", "message": "Product marked as inactive"}
+    return db_product
