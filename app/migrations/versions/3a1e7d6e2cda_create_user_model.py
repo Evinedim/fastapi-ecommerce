@@ -25,14 +25,14 @@ def upgrade() -> None:
     op.create_table('users',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
-    sa.Column('hash_password', sa.String(), nullable=False),
+    sa.Column('hashed_password', sa.String(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('role', sa.String(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.add_column('products', sa.Column('seller_id', sa.Integer(), nullable=False))
-    op.create_foreign_key(None, 'products', 'users', ['seller_id'], ['id'])
+    op.create_foreign_key('products_seller_id_fkey', 'products', 'users', ['seller_id'], ['id'])
     # ### end Alembic commands ###
 
 
@@ -42,7 +42,7 @@ def downgrade() -> None:
     # WARNING: constraint name is None; this directive will fail as
     # rendered.  Add a name, or use a naming convention; see
     # https://alembic.sqlalchemy.org/en/latest/naming.html
-    op.drop_constraint(None, 'products', type_='foreignkey')
+    op.drop_constraint('products_seller_id_fkey', 'products', type_='foreignkey')
     op.drop_column('products', 'seller_id')
     op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_table('users')
