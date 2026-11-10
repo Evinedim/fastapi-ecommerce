@@ -88,21 +88,28 @@ async def get_product(product_id: int, db: AsyncSession = Depends(get_async_db))
     return db_product
 
 @router.put("/{product_id}", response_model=ProductSchema)
-async def update_product(product_id: int, product: ProductCreate, db: AsyncSession = Depends(get_async_db)):
+async def update_product(
+    product_id: int, 
+    product: ProductCreate,
+    seller: UserModel = Depends(get_current_seller),
+    db: AsyncSession = Depends(get_async_db)
+):
     """
     Обновляет товар по его ID.
     """
-    db_scalars = await db.scalars(
+    product_result = await db.scalars(
         select(ProductModel).where(ProductModel.id == product_id, ProductModel.is_active == True)
     )
-    db_product = db_scalars.first()
+    db_product = product_result.first()
     if db_product is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
+    if db_product.seller_id != seller.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only update your own products")
 
-    db_scalars = await db.scalars(
+    category_result = await db.scalars(
         select(CategoryModel).where(CategoryModel.id == product.category_id, CategoryModel.is_active == True)
     )
-    db_category = db_scalars.first()
+    db_category = category_result.first()
     if db_category is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Category not found or inactive")
 
