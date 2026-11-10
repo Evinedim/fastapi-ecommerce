@@ -4,7 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.products import Product as ProductModel
 from app.models.categories import Category as CategoryModel
+from app.models.users import User as UserModel
 from app.schemas import Product as ProductSchema, ProductCreate
+from app.auth import get_current_seller
 from app.db_depends import get_async_db
 
 router = APIRouter(
@@ -23,18 +25,22 @@ async def get_all_products(db: AsyncSession = Depends(get_async_db)):
     return db_scalars.all()
 
 @router.post("/", response_model=ProductSchema, status_code=status.HTTP_201_CREATED)
-async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_async_db)):
+async def create_product(
+    product: ProductCreate,
+    seller: UserModel = Depends(get_current_seller),
+    db: AsyncSession = Depends(get_async_db)
+):
     """
-    Создаёт новый товар.
+    Создаёт новый товар, привязанный к текущему продавцу (только для 'seller').
     """
-    db_scalars = await db.scalars(
+    category_result = await db.scalars(
         select(CategoryModel).where(CategoryModel.id == product.category_id, CategoryModel.is_active == True)
     )
-    db_category = db_scalars.first()
+    db_category = category_result.first()
     if db_category is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Category not found or inactive")
 
-    db_product = ProductModel(**product.model_dump())
+    db_product = ProductModel(**product.model_dump(), seller_id=seller.id)
     db.add(db_product)
     await db.commit()
     await db.refresh(db_product)

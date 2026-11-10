@@ -77,3 +77,11 @@ async def get_current_user(token: str = Depends(oauth2_schema), db: AsyncSession
         raise credentials_exception
 
     return db_user
+
+def get_current_seller(user: UserModel = Depends(get_current_user)):
+    """
+    Проверяет, что пользователь имеет роль 'seller'.
+    """
+    if user.role != "seller":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only seller can perform this action")
+    return user
