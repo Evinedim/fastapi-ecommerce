@@ -95,7 +95,7 @@ async def update_product(
     db: AsyncSession = Depends(get_async_db)
 ):
     """
-    Обновляет товар по его ID.
+    Обновляет товар, если он принадлежит текущему продавцу (только для 'seller').
     """
     product_result = await db.scalars(
         select(ProductModel).where(ProductModel.id == product_id, ProductModel.is_active == True)
@@ -122,16 +122,22 @@ async def update_product(
     return db_product
 
 @router.delete("/{product_id}", response_model=ProductSchema)
-async def delete_product(product_id: int, db: AsyncSession = Depends(get_async_db)):
+async def delete_product(
+    product_id: int, 
+    seller: UserModel = Depends(get_current_seller),
+    db: AsyncSession = Depends(get_async_db)
+):
     """
-    Логически удаляет продукт по его ID, устанавливая is_active = False.
+    Выполняет мягкое удаление товара, если он принадлежит текущему продавцу (только для 'seller').
     """
-    db_scalars = await db.scalars(
+    product_result = await db.scalars(
         select(ProductModel).where(ProductModel.id == product_id, ProductModel.is_active == True)
     )
-    db_product = db_scalars.first()
+    db_product = product_result.first()
     if db_product is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found or inactive")
+    if db_product.seller_id != seller.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can only update your own product")
 
     db_product.is_active = False
     await db.commit()
