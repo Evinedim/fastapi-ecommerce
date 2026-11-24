@@ -21,6 +21,7 @@ class Category(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ProductCreate(BaseModel):
     """
     Модель для создания и обновления товара.
@@ -70,3 +71,7 @@ class User(BaseModel):
     is_active: bool = Field(..., description="Активность пользователя")
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
