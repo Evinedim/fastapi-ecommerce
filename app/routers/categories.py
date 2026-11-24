@@ -32,7 +32,7 @@ async def create_category(
     db: AsyncSession = Depends(get_async_db)
 ):
     """
-    Создаёт новую категорию, привязанную к текущему администратору (только для 'admin')..
+    Создаёт новую категорию.
     """
     if category.parent_id is not None:
         parent_result = await db.scalars(
@@ -50,7 +50,12 @@ async def create_category(
     return db_category
 
 @router.put("/{category_id}", response_model=CategorySchema)
-async def update_category(category_id: int, category: CategoryCreate, db: AsyncSession = Depends(get_async_db)):
+async def update_category(
+    category_id: int, 
+    category: CategoryCreate, 
+    admin: UserModel = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_async_db)
+):
     """
     Обновляет категорию по её ID.
     """
@@ -80,14 +85,18 @@ async def update_category(category_id: int, category: CategoryCreate, db: AsyncS
     return db_category
 
 @router.delete("/{category_id}", response_model=CategorySchema)
-async def delete_category(category_id: int, db: AsyncSession = Depends(get_async_db)):
+async def delete_category(
+    category_id: int, 
+    admin: UserModel = Depends(get_current_admin),
+    db: AsyncSession = Depends(get_async_db)
+):
     """
     Выполняет мягкое удаление категории по её ID, устанавливая is_active = False.
     """
-    result = await db.scalars(
+    category_result = await db.scalars(
         select(CategoryModel).where(CategoryModel.id == category_id, CategoryModel.is_active == True)
     )
-    db_category = result.first()
+    db_category = category_result.first()
     if db_category is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found")
 
