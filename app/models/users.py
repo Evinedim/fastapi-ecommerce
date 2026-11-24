@@ -14,3 +14,4 @@ class User(Base):
     role: Mapped[str] = mapped_column(String, default="buyer", nullable=False)
 
     products: Mapped[list["Product"]] = relationship("Product", back_populates="seller")
+    categories: Mapped[list["Categories"]] = relationship("Category", back_populates="admin")
