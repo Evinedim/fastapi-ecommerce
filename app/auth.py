@@ -99,3 +99,11 @@ def get_current_seller(user: UserModel = Depends(get_current_user)):
     if user.role != "seller":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only seller can perform this action")
     return user
+
+def get_current_admin(user: UserModel = Depends(get_current_user)):
+    """
+    Проверяет, что пользователь имеет роль 'admin'.
+    """
+    if user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admin can perform this action")
+    return user
