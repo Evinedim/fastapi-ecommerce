@@ -14,7 +14,6 @@ class Category(Base):
     admin_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
 
     products: Mapped[list["Product"]] = relationship("Product", back_populates="category")
-    admin: Mapped["User"] = relationship("User", back_populates="categories")
     parent: Mapped["Category | None"] = relationship(
         "Category", back_populates="children", remote_side="Category.id"
     )
