@@ -50,6 +50,7 @@ class Product(BaseModel):
     stock: int = Field(..., description="Количество товара на складе")
     category_id: int = Field(..., description="ID категории")
     is_active: bool = Field(..., description="Активность товара")
+    rating: float = Field(..., description="Средний рейтинг товара")
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -86,7 +87,7 @@ class ReviewCreate(BaseModel):
     Используется в POST и PUT запросах.
     """
     product_id: int = Field(..., description="Уникальный идентификатор продукта")
-    comment: str = Field(..., description="Текст отзыва")
+    comment: str | None = Field(None, description="Текст отзыва")
     grade: int = Field(..., ge=1, le=5, description="Оценка продукта")
 
 class Review(BaseModel):
@@ -97,7 +98,7 @@ class Review(BaseModel):
     id: int = Field(..., description="Уникальный идентификатор отзыва")
     user_id: int = Field(..., description="Уникальный идентификатор пользователя")
     product_id: int = Field(..., description="Уникальный идентификатор продукта")
-    comment: str = Field(..., description="Текст отзыва")
+    comment: str | None = Field(None, description="Текст отзыва")
     comment_date: datetime = Field(..., description="Дата создания отзыва")
     grade: int = Field(..., description="Оценка продукта")
     is_active: bool = Field(..., description="Активность отзыва")
