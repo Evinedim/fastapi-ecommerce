@@ -35,9 +35,10 @@ async def upgrade_product_rating(product_id: int, db: AsyncSession):
     )
     rating = avg_grade_result.first()
 
-    db_product = await db.scalars(
+    product_result = await db.scalars(
         select(ProductModel).where(ProductModel.id == product_id, ProductModel.is_active == True)
     )
+    db_product = product_result.first()
     db_product.rating = rating or 0.0
 
     await db.commit()
