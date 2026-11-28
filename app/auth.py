@@ -92,26 +92,23 @@ async def get_current_user(token: str = Depends(oauth2_schema), db: AsyncSession
 
     return db_user
 
-def get_current_buyer(user: UserModel = Depends(get_current_user)):
+def get_current_role(roles: list[str]):
     """
-    Проверяет, что пользователь имеет роль 'buyer'.
+    Проверяет, что пользователь имеет роль из списка roles.
     """
-    if user.role != "buyer":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only buyer can perform this action")
-    return user
+    def role_checker(user: UserModel = Depends(get_current_user)):
+        if user.role not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail=f"Only {' or '.join(roles)} can perform this action"
+            )
+        return user
+    return role_checker
 
-def get_current_seller(user: UserModel = Depends(get_current_user)):
-    """
-    Проверяет, что пользователь имеет роль 'seller'.
-    """
-    if user.role != "seller":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only seller can perform this action")
-    return user
+get_current_buyer = get_current_role(["buyer"])
 
-def get_current_admin(user: UserModel = Depends(get_current_user)):
-    """
-    Проверяет, что пользователь имеет роль 'admin'.
-    """
-    if user.role != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admin can perform this action")
-    return user
+get_current_seller = get_current_role(["seller"])
+
+get_current_admin = get_current_role(["admin"])
+
+get_current_buyer_or_admin = get_current_role(["buyer", "admin"])
