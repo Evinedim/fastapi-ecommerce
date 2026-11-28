@@ -84,6 +84,9 @@ async def delete_review(
     user = Depends(get_current_buyer_or_admin), 
     db: AsyncSession = Depends(get_async_db)
 ):
+    """
+    Выполняет мягкое удаление отзыва (только для 'seller' и 'admin').
+    """
     review_result = await db.scalars(
         select(ReviewModel).where(ReviewModel.id == review_id, ReviewModel.is_active == True)
     )
